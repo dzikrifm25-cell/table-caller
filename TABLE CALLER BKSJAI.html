@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pemanggil Meja Restoran (Audio File)</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: #f8fafc;
+            color: #334155;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            background: #ffffff;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            width: 100%;
+            max-width: 600px;
+            text-align: center;
+        }
+
+        h2 {
+            color: #1e293b;
+            margin-bottom: 20px;
+            font-size: 24px;
+        }
+
+        .display-box {
+            background: #f1f5f9;
+            border: 2px dashed #cbd5e1;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 25px;
+        }
+
+        .display-label {
+            font-size: 13px;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+
+        .current-table {
+            font-size: 64px;
+            font-weight: bold;
+            color: #2563eb;
+        }
+
+        .section-title {
+            font-size: 14px;
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 10px;
+            text-align: left;
+        }
+
+        /* Grid Tombol Meja Cepat (1-10) */
+        .table-grid {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+
+        .btn-table {
+            background-color: #e2e8f0;
+            color: #334155;
+            border: none;
+            padding: 12px 0;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-table:hover {
+            background-color: #2563eb;
+            color: white;
+        }
+
+        /* Input Kustom */
+        .custom-input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        input[type="number"] {
+            flex: 1;
+            padding: 12px;
+            font-size: 16px;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            outline: none;
+        }
+
+        .btn-call-custom {
+            background-color: #16a34a;
+            color: white;
+            border: none;
+            padding: 0 20px;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+        }
+
+        .btn-call-custom:hover {
+            background-color: #15803d;
+        }
+
+        /* Aksi Tambahan */
+        .action-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        .btn-action {
+            flex: 1;
+            padding: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            color: white;
+        }
+
+        .btn-repeat { background-color: #ca8a04; }
+        .btn-repeat:hover { background-color: #a16207; }
+
+        .btn-clear { background-color: #dc2626; }
+        .btn-clear:hover { background-color: #b91c1c; }
+
+        /* Riwayat Panggilan */
+        .history-section {
+            text-align: left;
+            border-top: 1px solid #e2e8f0;
+            padding-top: 15px;
+        }
+
+        .history-list {
+            display: flex;
+            gap: 8px;
+            list-style: none;
+            flex-wrap: wrap;
+            margin-top: 8px;
+        }
+
+        .history-item {
+            background: #f1f5f9;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-weight: 600;
+            color: #475569;
+            font-size: 13px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>TABLE CALLER BKSJAI</h2>
+        
+        <div class="display-box">
+            <div class="display-label">Meja yang Sedang Dipanggil</div>
+            <div class="current-table" id="currentTable">-</div>
+        </div>
+
+        <div class="section-title">Pilih Nomor Meja Cepat:</div>
+        <div class="table-grid" id="tableGrid"></div>
+
+        <div class="section-title">Atau Masukkan Nomor Meja Lainnya:</div>
+        <div class="custom-input-group">
+            <input type="number" id="customTableInput" placeholder="Contoh: 15" min="1">
+            <button class="btn-call-custom" onclick="panggilMejaKustom()">Panggil Meja</button>
+        </div>
+
+        <div class="action-group">
+            <button class="btn-action btn-repeat" onclick="panggilUlang()">Panggil Ulang Suara</button>
+            <button class="btn-action btn-clear" onclick="kosongkanTampilan()">Kosongkan Layar</button>
+        </div>
+
+        <div class="history-section">
+            <div class="section-title" style="margin-bottom: 0;">Riwayat Panggilan Terakhir:</div>
+            <ul class="history-list" id="historyList">
+                <li class="history-item">Belum ada</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        let mejaAktif = null;
+        let riwayatPanggilan = [];
+
+        // Membuat tombol meja cepat (1 sampai 10)
+        const tableGrid = document.getElementById('tableGrid');
+        for (let i = 1; i <= 10; i++) {
+            const btn = document.createElement('button');
+            btn.className = 'btn-table';
+            btn.innerText = i;
+            // Menggunakan tanda kurung dan string template agar aman dari error angka
+            btn.onclick = function() {
+                panggilMeja(i);
+            };
+            tableGrid.appendChild(btn);
+        }
+
+        function panggilMeja(nomorMeja) {
+            mejaAktif = nomorMeja;
+            
+            riwayatPanggilan.unshift(`Meja ${nomorMeja}`);
+            if (riwayatPanggilan.length > 10) {
+                riwayatPanggilan.pop();
+            }
+
+            updateTampilan();
+            jalankanSuaraFile(nomorMeja);
+        }
+
+        function panggilMejaKustom() {
+            const inputVal = document.getElementById('customTableInput').value;
+            if (!inputVal) {
+                alert("Silakan masukkan nomor meja terlebih dahulu!");
+                return;
+            }
+            panggilMeja(parseInt(inputVal));
+            document.getElementById('customTableInput').value = '';
+        }
+
+        function panggilUlang() {
+            if (mejaAktif === null) {
+                alert("Belum ada meja yang dipilih untuk dipanggil ulang.");
+                return;
+            }
+            jalankanSuaraFile(mejaAktif);
+        }
+
+        async function jalankanSuaraFile(nomorMeja) {
+            let namaFileNomor = String(nomorMeja) + ".mp3";
+
+            try {
+                let audioIntro = new Audio("bell_pre.mp3");
+                await audioIntro.play();
+
+                await new Promise((resolve) => {
+                    audioIntro.onended = resolve;
+                });
+
+                let audioNomor = new Audio(namaFileNomor);
+                await audioNomor.play();
+
+            } catch (error) {
+                console.warn("Intro gagal diputar atau file intro.mp3 tidak ada, langsung memutar nomor.");
+                
+                // Tidak pakai 'let' lagi di sini, langsung panggil variabelnya
+                let audioNomor = new Audio(namaFileNomor);
+                audioNomor.play().catch(err => {
+                    alert(`File audio "${namaFileNomor}" tidak ditemukan di dalam folder!`);
+                });
+            }
+        }
+        function kosongkanTampilan() {
+            mejaAktif = null;
+            document.getElementById('currentTable').innerText = '-';
+        }
+
+        function updateTampilan() {
+            document.getElementById('currentTable').innerText = mejaAktif !== null ? `Meja ${mejaAktif}` : '-';
+
+            const historyListEl = document.getElementById('historyList');
+            if (riwayatPanggilan.length === 0) {
+                historyListEl.innerHTML = '<li class="history-item">Belum ada</li>';
+            } else {
+                historyListEl.innerHTML = riwayatPanggilan
+                    .map(item => `<li class="history-item">${item}</li>`)
+                    .join('');
+            }
+        }
+    </script>
+
+</body>
+</html>
